@@ -1,0 +1,56 @@
+services:
+
+  postgres:
+
+    image: postgres:17
+
+    container_name: order-postgres
+
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orderuser
+      POSTGRES_PASSWORD: orderpassword
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U orderuser -d orders"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+
+    image: order-service:1.0.0
+
+    container_name: order-service
+
+    depends_on:
+
+      postgres:
+        condition: service_healthy
+
+    environment:
+
+      SPRING_PROFILES_ACTIVE: docker
+
+      DB_URL: jdbc:postgresql://postgres:5432/orders
+
+      DB_USERNAME: orderuser
+
+      DB_PASSWORD: orderpassword
+
+    ports:
+      - "8080:8080"
+
+volumes:
+
+  postgres_data:
